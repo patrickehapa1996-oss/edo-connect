@@ -8,7 +8,8 @@ This document provides context and guidelines for AI assistants working on the e
 **Type**: Real Estate & Property Platform
 **Target Market**: Edo State, Nigeria
 **Currency**: Nigerian Naira (NGN/₦)
-**Status**: Initial Setup Phase
+**Framework**: NestJS (Node.js/TypeScript)
+**AI Integration**: Anthropic Claude API
 **Repository**: patrickehapa1996-oss/edo-connect
 
 ### Description
@@ -20,6 +21,7 @@ EdoConnect is a comprehensive real estate platform serving Edo State, Nigeria. T
 - Contact property owners/agents
 - Save favorite properties
 - Access neighborhood information
+- Chat with an AI assistant powered by Claude
 
 ### Key Locations
 
@@ -34,20 +36,89 @@ The platform primarily serves these areas in Edo State:
 - **Ekpoma**
 - Other Local Government Areas (LGAs)
 
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Backend Framework | NestJS |
+| Language | TypeScript |
+| AI/LLM | Anthropic Claude API (`claude-3-5-sonnet-20241022`) |
+| Configuration | `@nestjs/config` (ConfigService) |
+| Runtime | Node.js |
+
 ## Repository Structure
 
 ```
 edo-connect/
-├── CLAUDE.md          # AI assistant guidelines (this file)
-├── README.md          # Project documentation
-└── .git/              # Git version control
+├── src/
+│   ├── ai-agent/
+│   │   └── ai-agent.service.ts    # Claude AI integration service
+│   ├── properties/
+│   │   └── properties.service.ts  # Property search & management
+│   ├── bookings/
+│   │   └── bookings.service.ts    # Booking & availability logic
+│   ├── inquiries/
+│   │   └── inquiries.service.ts   # User inquiries handling
+│   └── ...
+├── CLAUDE.md
+├── README.md
+└── package.json
 ```
 
-> **Note**: Update this section as the project structure evolves.
+## AI Agent Architecture
+
+### Overview
+
+The platform includes an AI-powered chat agent (`AiAgentService`) that uses Claude with function calling (tool use) to assist users with property searches, bookings, and inquiries.
+
+### Key File: `src/ai-agent/ai-agent.service.ts`
+
+```typescript
+@Injectable()
+export class AiAgentService {
+  // Dependencies injected:
+  // - ConfigService: Environment configuration
+  // - PropertiesService: Property operations
+  // - BookingsService: Booking operations
+  // - InquiriesService: Inquiry operations
+}
+```
+
+### Chat Flow
+
+1. User sends message via `chat(userId, message, conversationHistory)`
+2. Message sent to Claude API with system prompt and tool definitions
+3. If Claude requests tool use (`stop_reason === 'tool_use'`):
+   - Extract tool name and input from response
+   - Execute tool via `executeToolCall()`
+   - Send tool result back to Claude
+   - Return Claude's follow-up response
+4. Return final response to user
+
+### Tool Execution Pattern
+
+```typescript
+private async executeToolCall(toolName: string, input: any, userId: string) {
+  switch (toolName) {
+    case 'search_properties':
+      return await this.propertiesService.search(input);
+    case 'get_property_details':
+      return await this.propertiesService.findOne(input.property_id);
+    // ... other tools
+  }
+}
+```
+
+### Important Implementation Notes
+
+- **User ID Injection**: The `userId` is passed to tool calls for user-specific operations (favorites, bookings, inquiries)
+- **Conversation History**: Maintained between calls for context continuity
+- **Tool Results**: Always JSON stringified before sending back to Claude
+- **Response Extraction**: Text blocks extracted from Claude's response via `extractTextFromResponse()`
 
 ## API Functions Reference
 
-The platform exposes the following core functions:
+The platform exposes the following core functions as Claude tools:
 
 ### Property Search & Discovery
 
@@ -112,25 +183,57 @@ shortlet - Short-term/vacation rentals
 - `borehole` - Water borehole
 - `furnished` - Furnished property
 
-### Issue Types (for escalation)
+### Neighborhood Data Structure
 
-```
-payment   - Payment-related issues
-booking   - Booking problems
-technical - Technical/app issues
-complaint - General complaints
-fraud     - Fraud reports
-other     - Other issues
+```typescript
+{
+  name: string;                    // Full name
+  description: string;             // Area description
+  average_price_sale: { min, max }; // Sale price range (NGN)
+  average_price_rent: { min, max }; // Rent price range (NGN/year)
+  amenities: string[];             // Available amenities
+  safety_rating: number;           // 1-5 scale
+  nearby_landmarks: string[];      // Notable locations
+}
 ```
 
-### Urgency Levels
+### Support Ticket Structure
 
+```typescript
+{
+  id: string;              // Format: EDO-SUP-{timestamp}
+  userId: string;
+  type: IssueType;
+  description: string;
+  urgency: UrgencyLevel;
+  status: 'open' | 'in_progress' | 'resolved';
+  createdAt: Date;
+  estimatedResponseTime: string;
+}
 ```
-low      - Can wait
-medium   - Normal priority (default)
-high     - Needs prompt attention
-critical - Immediate attention required
+
+### Viewing Request Structure
+
+```typescript
+{
+  id: string;              // Format: EDO-VIEW-{timestamp}
+  propertyId: string;
+  userId: string;
+  preferredDate: string;
+  preferredTime: string;
+  notes: string;
+  status: 'pending' | 'confirmed' | 'cancelled';
+}
 ```
+
+### Urgency Response Times
+
+| Level | Response Time |
+|-------|---------------|
+| `critical` | 15 minutes |
+| `high` | 1 hour |
+| `medium` | 2 hours |
+| `low` | 24 hours |
 
 ## Development Guidelines
 
@@ -154,111 +257,79 @@ critical - Immediate attention required
 
 ### Code Conventions
 
-> **Note**: Update this section once the tech stack is established.
-
-1. **Code Quality**:
-   - Write clean, readable, and maintainable code
-   - Follow the principle of single responsibility
-   - Keep functions small and focused
-   - Use meaningful variable and function names
+1. **NestJS Patterns**:
+   - Use `@Injectable()` decorator for services
+   - Inject dependencies via constructor
+   - Follow NestJS module structure
+   - Use ConfigService for environment variables
 
 2. **Naming Conventions**:
-   - Use `snake_case` for API parameters (as defined in the API schema)
-   - Use `camelCase` for JavaScript/TypeScript variables
-   - Use `PascalCase` for components and classes
+   - Use `snake_case` for API/tool parameters
+   - Use `camelCase` for TypeScript variables and methods
+   - Use `PascalCase` for classes and interfaces
    - Use `SCREAMING_SNAKE_CASE` for constants
 
-3. **Documentation**:
-   - Document public APIs and complex logic
-   - Keep comments up to date with code changes
-   - Use JSDoc/TSDoc for JavaScript/TypeScript projects
+3. **TypeScript**:
+   - Define interfaces for all data structures
+   - Use strict type checking
+   - Avoid `any` type when possible
 
 4. **Error Handling**:
    - Handle errors gracefully
-   - Provide meaningful error messages in English and Pidgin where appropriate
+   - Provide meaningful error messages
    - Log errors appropriately for debugging
+   - Use NestJS exception filters
 
 ### Testing
 
-> **Note**: Update this section once the testing framework is configured.
-
-When testing is set up:
-- Write unit tests for new functionality
+When testing:
+- Write unit tests for services
+- Mock external API calls (Anthropic)
+- Test tool execution paths
 - Test with Nigerian Naira currency values
 - Test with Edo State location data
-- Maintain or improve code coverage
-- Run tests before committing changes
 
 ## Commands Reference
 
-> **Note**: Update this section once package.json and scripts are configured.
-
 ```bash
 # Install dependencies
-# npm install
+npm install
 
 # Run development server
-# npm run dev
+npm run start:dev
 
 # Build for production
-# npm run build
+npm run build
+
+# Run production server
+npm run start:prod
 
 # Run tests
-# npm test
+npm test
+
+# Run tests with coverage
+npm run test:cov
 
 # Lint code
-# npm run lint
+npm run lint
 ```
 
-## Architecture
+## Environment Variables
 
-### Core Modules
+```bash
+# Required
+ANTHROPIC_API_KEY=         # Claude API key
+DATABASE_URL=              # Database connection string
 
-1. **Property Module** - Search, details, favorites
-2. **Booking Module** - Availability, pricing, reservations
-3. **User Module** - Profiles, bookings history, favorites
-4. **Inquiry Module** - Messages, viewing schedules
-5. **Support Module** - Human escalation, tickets
+# Application
+JWT_SECRET=                # JWT signing secret
+API_SECRET=                # Internal API secret
+PAYMENT_GATEWAY_KEY=       # Payment processor key
 
-### Data Models
-
-Key entities to implement:
-- `Property` - Real estate listings
-- `User` - Platform users
-- `Booking` - Reservations
-- `Inquiry` - User inquiries
-- `Viewing` - Scheduled viewings
-- `Neighborhood` - Location information
-- `SupportTicket` - Escalated issues
-
-### External Dependencies
-
-_To be documented as the project develops._
-
-## Environment Setup
-
-### Prerequisites
-
-- Node.js (version TBD)
-- npm or yarn
-- Database (TBD)
-
-### Environment Variables
-
-Expected environment variables:
+# Optional
+NODE_ENV=development       # Environment mode
+PORT=3000                  # Server port
 ```
-DATABASE_URL=
-API_SECRET=
-JWT_SECRET=
-PAYMENT_GATEWAY_KEY=
-```
-
-### Local Development
-
-1. Clone the repository
-2. Install dependencies
-3. Configure environment variables
-4. Start development server
 
 ## AI Assistant Best Practices
 
@@ -268,12 +339,12 @@ When working on this codebase:
 
 2. **Minimal Changes**: Make focused, minimal changes that directly address the task at hand. Avoid unnecessary refactoring.
 
-3. **Preserve Patterns**: Follow existing code patterns and conventions in the codebase.
+3. **Preserve Patterns**: Follow existing NestJS patterns and conventions in the codebase.
 
 4. **Test Changes**: Verify changes work correctly and don't break existing functionality.
 
-5. **Security Awareness**: Be mindful of security implications:
-   - Never commit secrets or credentials
+5. **Security Awareness**:
+   - Never commit secrets or credentials (especially `ANTHROPIC_API_KEY`)
    - Validate user inputs (especially property IDs, user IDs)
    - Sanitize outputs
    - Follow OWASP guidelines
@@ -283,19 +354,33 @@ When working on this codebase:
    - Use Nigerian Naira (₦) for all monetary values
    - Respect local date formats
    - Be familiar with Edo State geography
-   - Support local phone number formats
+   - Support local phone number formats (+234)
 
-7. **Error Handling**: Implement proper error handling for edge cases.
+7. **Claude API Integration**:
+   - Keep tool definitions in sync with service implementations
+   - Handle tool use responses properly
+   - Maintain conversation history format
+   - Handle API errors gracefully
 
-8. **Documentation Updates**: Update relevant documentation when making significant changes.
+8. **Documentation Updates**: Update this CLAUDE.md when making significant changes.
 
 ## Troubleshooting
 
-> **Note**: Document common issues and solutions as they are discovered.
+### Common Issues
+
+| Issue | Solution |
+|-------|----------|
+| Claude API returns empty response | Check `ANTHROPIC_API_KEY` is set correctly |
+| Tool execution fails | Verify service method exists and parameters match |
+| Conversation context lost | Ensure `conversationHistory` is passed correctly |
 
 ## Contributing
 
-_To be documented based on project requirements._
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Write/update tests
+5. Submit a pull request
 
 ---
 
