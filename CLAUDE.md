@@ -42,7 +42,7 @@ The platform primarily serves these areas in Edo State:
 |-------|------------|
 | Backend Framework | NestJS |
 | Language | TypeScript |
-| AI/LLM | Anthropic Claude API (`claude-3-5-sonnet-20241022`) |
+| AI/LLM | Anthropic Claude API (`claude-sonnet-4-20250514`) |
 | Configuration | `@nestjs/config` (ConfigService) |
 | Runtime | Node.js |
 
@@ -52,14 +52,31 @@ The platform primarily serves these areas in Edo State:
 edo-connect/
 ├── src/
 │   ├── ai-agent/
-│   │   └── ai-agent.service.ts    # Claude AI integration service
+│   │   ├── ai-agent.module.ts       # AI agent NestJS module
+│   │   ├── ai-agent.controller.ts   # Chat endpoint controller
+│   │   ├── ai-agent.service.ts      # Claude AI integration service
+│   │   ├── dto/
+│   │   │   └── chat.dto.ts          # Request/response DTOs
+│   │   └── interfaces/
+│   │       └── tool-inputs.interface.ts  # Tool input types
 │   ├── properties/
-│   │   └── properties.service.ts  # Property search & management
+│   │   ├── properties.module.ts     # Properties module
+│   │   └── properties.service.ts    # Property search & management
 │   ├── bookings/
-│   │   └── bookings.service.ts    # Booking & availability logic
+│   │   ├── bookings.module.ts       # Bookings module
+│   │   └── bookings.service.ts      # Booking & availability logic
 │   ├── inquiries/
-│   │   └── inquiries.service.ts   # User inquiries handling
-│   └── ...
+│   │   ├── inquiries.module.ts      # Inquiries module
+│   │   └── inquiries.service.ts     # User inquiries handling
+│   ├── support/
+│   │   ├── support.module.ts        # Support module
+│   │   └── support.service.ts       # Support ticket management
+│   ├── viewings/
+│   │   ├── viewings.module.ts       # Viewings module
+│   │   └── viewings.service.ts      # Property viewing scheduling
+│   └── auth/
+│       └── guards/
+│           └── jwt-auth.guard.ts    # JWT authentication guard
 ├── CLAUDE.md
 ├── README.md
 └── package.json
