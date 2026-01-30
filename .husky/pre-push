@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🚀 Running pre-push checks..."
+
+# Get the current branch name
+branch=$(git rev-parse --abbrev-ref HEAD)
+
+# Prevent direct pushes to main and develop
+if [ "$branch" = "main" ] || [ "$branch" = "develop" ]; then
+  echo "❌ Direct pushes to '$branch' are not allowed."
+  echo "   Please create a feature/bugfix branch and submit a pull request."
+  exit 1
+fi
+
+# Run type checking (optional - uncomment if needed)
+# echo "Running type checks..."
+# npm run type-check
+# if [ $? -ne 0 ]; then
+#   echo "❌ Type check failed. Please fix type errors before pushing."
+#   exit 1
+# fi
+
+echo "✅ Pre-push checks passed!"

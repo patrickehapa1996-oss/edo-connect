@@ -1,0 +1,23 @@
+# EdoConnect Code Owners
+# These owners will be automatically requested for review when someone opens a pull request.
+
+# Default owners for everything in the repo
+* @edoconnect/maintainers
+
+# Backend specific
+/edoconnect-backend/ @edoconnect/backend-team
+
+# Web frontend specific
+/edoconnect-web/ @edoconnect/frontend-team
+
+# Mobile specific
+/edoconnect-mobile/ @edoconnect/mobile-team
+
+# DevOps and infrastructure
+/docker-compose*.yml @edoconnect/devops-team
+/.github/ @edoconnect/devops-team
+/Dockerfile @edoconnect/devops-team
+
+# Documentation
+*.md @edoconnect/maintainers
+/docs/ @edoconnect/maintainers
