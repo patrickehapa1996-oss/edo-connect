@@ -1,0 +1,36 @@
+{
+  "name": "edo-connect",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EdoConnect - Connecting communities through technology",
+  "workspaces": [
+    "edoconnect-backend",
+    "edoconnect-web",
+    "edoconnect-mobile"
+  ],
+  "scripts": {
+    "backend": "npm run start:dev --workspace=edoconnect-backend",
+    "backend:build": "npm run build --workspace=edoconnect-backend",
+    "web": "npm run dev --workspace=edoconnect-web",
+    "web:build": "npm run build --workspace=edoconnect-web",
+    "mobile:start": "npm run start --workspace=edoconnect-mobile",
+    "mobile:ios": "npm run ios --workspace=edoconnect-mobile",
+    "mobile:android": "npm run android --workspace=edoconnect-mobile",
+    "install:all": "npm install && npm install --workspace=edoconnect-backend && npm install --workspace=edoconnect-web && npm install --workspace=edoconnect-mobile",
+    "lint": "npm run lint --workspaces --if-present",
+    "lint:fix": "npm run lint:fix --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "format": "npm run format --workspaces --if-present",
+    "docker:dev": "docker-compose -f docker-compose.dev.yml up -d",
+    "docker:dev:down": "docker-compose -f docker-compose.dev.yml down",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:build": "docker-compose build",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "EdoConnect Team",
+  "license": "MIT"
+}
